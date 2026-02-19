@@ -177,7 +177,15 @@ Judges are created by the admin. After creating a judge in the admin dashboard, 
 
 1. **Admin:** Go to **Rankings** to view results
 2. Set the **Top N** value to highlight qualifying bands
-3. Click **Print Rankings** for a printable report
+3. Click **Print Rankings** for a printable report with watermark, judge signature row, and signatories
+4. Click **Excel** to download a styled `.xlsx` file with top-N highlighting
+
+### Configuring Event Settings
+
+1. **Admin:** Go to **Settings**
+2. **Event Configuration tab** — Set event title, subtitle, and add/remove signatories (name, title, font size)
+3. **Logo Configuration tab** — Upload header left/right logos and watermark (max 5MB, PNG/JPG/SVG)
+4. **Admin Credentials tab** — Update admin name, email, or password
 
 ---
 
@@ -234,3 +242,5 @@ If you need to start fresh:
 | Judges can't connect from other devices | Check firewall rules and use your local IP address |
 | Port 80 already in use | Stop Skype/IIS or change Apache port in XAMPP config |
 | Port 8081 already in use | Edit `websocket/server.js` line `const WS_PORT = 8081;` to another port, and update `WS_URL` in `admin.js` and `judge.js` |
+| Logo upload fails | Ensure `assets/uploads/logos/` directory exists and is writable by Apache |
+| Excel download empty | Ensure rankings data is loaded first by selecting a round on the Rankings page |

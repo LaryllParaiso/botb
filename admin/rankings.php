@@ -14,10 +14,15 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
         <div class="container-fluid p-4">
             <!-- Print header (hidden on screen, shown on print) -->
             <div class="print-header">
-                <h3>Battle of the Bands — NEUST 2026</h3>
-                <h5>118th Founding Anniversary / 28th Charter Day</h5>
-                <p>Official Rankings — <?php echo date('F j, Y'); ?></p>
-                <hr>
+                <div class="print-logos">
+                    <img id="printLogoLeft" src="/BOB_SYSTEM/assets/image 23.png" alt="NEUST Seal" class="print-logo">
+                    <div class="print-title-block">
+                        <h3 id="printEventTitle">Battle of the Bands — NEUST 2026</h3>
+                        <h5 id="printEventSubtitle">118th Founding Anniversary / 28th Charter Day</h5>
+                        <p>Official Rankings — <span id="printDate"><?php echo date('F j, Y'); ?></span></p>
+                    </div>
+                    <img id="printLogoRight" src="/BOB_SYSTEM/assets/Mask group.png" alt="BotB Logo" class="print-logo">
+                </div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-4 no-print">
@@ -32,6 +37,9 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
                                onchange="reloadCurrentRankings()">
                         <span class="text-muted text-nowrap">bands highlighted</span>
                     </div>
+                    <button class="btn btn-outline-success" onclick="downloadExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </button>
                     <button class="btn btn-outline-primary" onclick="window.print()">
                         <i class="bi bi-printer"></i> Print
                     </button>
@@ -87,8 +95,19 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
                 </div>
             </div>
 
+            <!-- Print watermark: fixed behind content on every page -->
+            <div class="print-watermark">
+                <img id="printWatermarkImg" src="/BOB_SYSTEM/assets/Mask group (1).png" alt="Watermark">
+            </div>
+
+            <!-- Print footer: judges + signatory (hidden on screen) -->
+            <div class="print-footer">
+                <div class="print-judges" id="printJudgesList"></div>
+                <div class="print-signatories" id="printSignatories"></div>
+            </div>
+
             <div class="text-muted small mt-3 no-print">
-                <i class="bi bi-info-circle"></i> Rankings update when scores are submitted. Click <strong>Print</strong> for a clean printable view.
+                <i class="bi bi-info-circle"></i> Rankings update when scores are submitted. Click <strong>Print</strong> for a clean printable view or <strong>Excel</strong> to download.
             </div>
         </div>
 

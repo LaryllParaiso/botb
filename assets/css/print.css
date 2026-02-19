@@ -10,7 +10,8 @@
     .no-print,
     .badge-now-performing,
     .badge-standby,
-    .loading-overlay {
+    .loading-overlay,
+    .nav-tabs {
         display: none !important;
     }
 
@@ -23,25 +24,27 @@
     body {
         background: #fff !important;
         color: #000 !important;
-        font-size: 12pt;
+        font-size: 11pt;
     }
 
-    /* Table styling for print */
+    /* Table styling for print — transparent so watermark shows through */
     .table {
         border-collapse: collapse;
         width: 100%;
+        position: relative;
+        z-index: 1;
     }
 
     .table th,
     .table td {
         border: 1px solid #333 !important;
-        padding: 6px 8px;
+        padding: 5px 8px;
         color: #000 !important;
-        background: #fff !important;
+        background: transparent !important;
     }
 
     .table th {
-        background: #eee !important;
+        background: transparent !important;
         font-weight: bold;
     }
 
@@ -80,11 +83,111 @@
         display: none !important;
     }
 
-    /* Print header */
+    /* Print header with logos */
     .print-header {
         display: block !important;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .print-logos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .print-logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .print-title-block {
+        text-align: center;
+    }
+
+    .print-title-block h3 {
+        font-size: 16pt;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .print-title-block h5 {
+        font-size: 11pt;
+        font-weight: 400;
+        margin: 0.2rem 0;
+    }
+
+    .print-title-block p {
+        font-size: 10pt;
+        color: #555;
+        margin: 0.2rem 0 0;
+    }
+
+    /* Print footer: judges + signatory */
+    .print-footer {
+        display: block !important;
+        margin-top: 3rem;
+    }
+
+    /* Judges displayed horizontally with space above for signatures */
+    .print-judges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 0.5rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .print-judge-name {
+        font-size: 11pt;
+        text-align: center;
+        min-width: 100px;
+        flex: 1;
+    }
+
+    /* Signatories displayed horizontally (same layout as judge names) */
+    .print-signatories {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .print-signatory-block {
+        flex: 1;
+        text-align: center;
+        min-width: 120px;
+    }
+
+    .print-signatory-block strong {
+        text-decoration: underline;
+    }
+
+    /* Watermark: fixed position centered on every printed page, behind content */
+    .print-watermark {
+        display: block !important;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.10;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .print-watermark img {
+        width: 550px;
+        height: auto;
     }
 
     /* Page breaks */
@@ -92,16 +195,27 @@
         page-break-before: always;
     }
 
-    /* Remove shadows and rounded corners */
+    /* Remove shadows, rounded corners, and backgrounds so watermark shows through */
     .card {
         border: none !important;
         box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    .card-body {
+        background: transparent !important;
+    }
+
+    .table-responsive {
+        background: transparent !important;
     }
 }
 
 /* Hide print-only elements on screen */
 @media screen {
-    .print-header {
+    .print-header,
+    .print-footer,
+    .print-watermark {
         display: none !important;
     }
 }

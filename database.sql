@@ -75,7 +75,24 @@ CREATE TABLE bands (
 ) ENGINE=InnoDB;
 
 -- ============================================
--- 5. Scores
+-- 5. Settings (key-value store for event config)
+-- ============================================
+CREATE TABLE settings (
+  setting_key   VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT NOT NULL
+) ENGINE=InnoDB;
+
+-- Logo uploads are stored in: assets/uploads/logos/  (must be writable by Apache)
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('event_title',    'Battle of the Bands - NEUST 2026'),
+  ('event_subtitle', '118th Founding Anniversary / 28th Charter Day'),
+  ('signatories',    '[{"name":"Head of the band name","title":"Head of the band name","fontSize":11}]'),
+  ('logo_left',      '/BOB_SYSTEM/assets/image 23.png'),
+  ('logo_right',     '/BOB_SYSTEM/assets/Mask group.png'),
+  ('logo_watermark', '/BOB_SYSTEM/assets/Mask group (1).png');
+
+-- ============================================
+-- 6. Scores
 -- ============================================
 CREATE TABLE scores (
   id           INT AUTO_INCREMENT PRIMARY KEY,

@@ -21,6 +21,9 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             <a class="nav-link px-3 py-3 <?php echo $currentPage === 'scores' ? 'active bg-primary text-white' : ''; ?>" href="/BOB_SYSTEM/admin/scores.php">
                 <i class="bi bi-pencil-square"></i> Scores
             </a>
+            <a class="nav-link px-3 py-3 <?php echo $currentPage === 'settings' ? 'active bg-primary text-white' : ''; ?>" href="/BOB_SYSTEM/admin/settings.php">
+                <i class="bi bi-gear"></i> Settings
+            </a>
             <hr class="my-0">
             <a class="nav-link px-3 py-3 text-danger" href="/BOB_SYSTEM/logout.php">
                 <i class="bi bi-box-arrow-left"></i> Logout
@@ -48,6 +51,9 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             </a>
             <a class="nav-link text-white px-3 py-3 <?php echo $currentPage === 'scores' ? 'bg-white bg-opacity-25' : ''; ?>" href="/BOB_SYSTEM/admin/scores.php">
                 <i class="bi bi-pencil-square"></i> Scores
+            </a>
+            <a class="nav-link text-white px-3 py-3 <?php echo $currentPage === 'settings' ? 'bg-white bg-opacity-25' : ''; ?>" href="/BOB_SYSTEM/admin/settings.php">
+                <i class="bi bi-gear"></i> Settings
             </a>
         </nav>
         <div class="mt-auto p-3 border-top border-light border-opacity-25">

@@ -88,6 +88,9 @@ $pageTitle = 'Login — BotB Tabulator';
                             <span class="input-group-text"><i class="bi bi-lock"></i></span>
                             <input type="password" class="form-control" id="password" name="password"
                                    placeholder="Enter your password" required>
+                            <button type="button" class="input-group-text bg-white border-start-0" id="togglePassword" tabindex="-1" style="cursor:pointer;">
+                                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                            </button>
                         </div>
                         <div class="invalid-feedback">Please enter your password.</div>
                     </div>
@@ -105,6 +108,19 @@ $pageTitle = 'Login — BotB Tabulator';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Password show/hide toggle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('togglePasswordIcon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                pwd.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        });
+
         // Client-side validation
         document.querySelector('form').addEventListener('submit', function(e) {
             const email = document.getElementById('email');

@@ -11,9 +11,15 @@ A real-time scoring and tabulation system for Battle of the Bands competitions. 
 - **Real-time Updates** — WebSocket-powered instant notifications (with polling fallback)
 - **Two Rounds** — Elimination and Grand Finals with separate criteria/weights
 - **Tie-aware Rankings** — Bands with identical scores share the same rank
-- **Top-N Highlighting** — Configurable top-N qualifier display with print support
+- **Top-N Highlighting** — Configurable top-N qualifier display with print and Excel support
+- **Excel Export** — Download rankings as styled `.xlsx` with top-N highlighting, judge names, and signatories
+- **Print-Optimized Layout** — Landscape/portrait print with watermark, judge signature row, and horizontal signatories
+- **Logo Management** — Admin-configurable header left/right logos and watermark via Settings
+- **Multiple Signatories** — Add/remove signatories with custom font size; displayed horizontally on print and Excel
 - **Score Management** — Admin can view, edit, and delete individual scores
 - **System Reset** — Full data reset with confirmation safeguard
+- **Settings Tabs** — Event Configuration, Logo Configuration, and Admin Credentials in separate tabs
+- **Show/Hide Password** — Eye-icon toggle on login and admin credential fields
 - **Responsive Design** — Mobile-friendly with horizontal-scrolling tables
 - **SweetAlert2 Notifications** — Beautiful popup confirmations and alerts
 
@@ -244,7 +250,18 @@ nssm start BotB-WebSocket
 1. Go to **Admin → Rankings**
 2. Select the round tab (Elimination / Grand Finals)
 3. Set the **Top N** value to highlight qualifying bands
-4. Click **Print Rankings** — the page uses print-optimized CSS
+4. Click **Print Rankings** — the page uses print-optimized CSS with watermark and horizontal judge/signatory rows
+5. Click **Excel** to download a styled `.xlsx` file with the same top-N highlighting
+
+## Settings
+
+Go to **Admin → Settings** to configure:
+
+| Tab | Options |
+|-----|---------|
+| **Event Configuration** | Event title, subtitle, and multiple signatories (name, title, font size) |
+| **Logo Configuration** | Header left logo, header right logo, and watermark logo (max 5MB each) |
+| **Admin Credentials** | Update admin name, email, and password |
 
 ---
 
@@ -266,6 +283,7 @@ nssm start BotB-WebSocket
 - **Backend:** PHP 8.0+ (vanilla, no framework)
 - **Database:** MySQL / MariaDB
 - **Frontend:** Bootstrap 5.3, Bootstrap Icons, SweetAlert2
+- **Excel Export:** SheetJS (`xlsx-js-style`) — client-side styled Excel generation
 - **Real-time:** Node.js WebSocket (`ws` library)
 - **Server:** Apache (XAMPP)
 

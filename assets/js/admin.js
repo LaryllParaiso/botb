@@ -573,6 +573,49 @@ function renderRankings(data) {
 
     const topN = getTopN();
 
+    // Populate print header/footer from settings
+    if (data.settings) {
+        const titleEl = document.getElementById('printEventTitle');
+        const subtitleEl = document.getElementById('printEventSubtitle');
+        if (titleEl) titleEl.textContent = data.settings.event_title || 'Battle of the Bands — NEUST 2026';
+        if (subtitleEl) subtitleEl.textContent = data.settings.event_subtitle || '118th Founding Anniversary / 28th Charter Day';
+
+        // Dynamic logos
+        const logoLeft = document.getElementById('printLogoLeft');
+        const logoRight = document.getElementById('printLogoRight');
+        const watermark = document.getElementById('printWatermarkImg');
+        if (logoLeft && data.settings.logo_left) logoLeft.src = data.settings.logo_left;
+        if (logoRight && data.settings.logo_right) logoRight.src = data.settings.logo_right;
+        if (watermark && data.settings.logo_watermark) watermark.src = data.settings.logo_watermark;
+
+        // Signatories (multiple, centered, with custom font size)
+        const sigContainer = document.getElementById('printSignatories');
+        if (sigContainer) {
+            let signatories = [];
+            try { signatories = JSON.parse(data.settings.signatories || '[]'); } catch(e) {}
+            sigContainer.innerHTML = signatories.map(sig => {
+                const fs = sig.fontSize ? `font-size:${sig.fontSize}pt;` : '';
+                return `<div class="print-signatory-block" style="${fs}"><strong>${escapeHtml(sig.name || '')}</strong><br><span>${escapeHtml(sig.title || '')}</span></div>`;
+            }).join('');
+        }
+    }
+
+    // Update print date to current date
+    const printDateEl = document.getElementById('printDate');
+    if (printDateEl) {
+        printDateEl.textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // Populate print judges list from all registered judges
+    if (data.all_judges) {
+        const judgesListEl = document.getElementById('printJudgesList');
+        if (judgesListEl) {
+            judgesListEl.innerHTML = data.all_judges.map(j =>
+                `<div class="print-judge-name"><strong><u>${escapeHtml(j.name)}</u></strong></div>`
+            ).join('');
+        }
+    }
+
     // Build header
     let headerHtml = '<tr><th>Rank</th><th>Band Name</th>';
     if (data.judges && data.judges.length > 0) {
@@ -591,8 +634,6 @@ function renderRankings(data) {
     }
 
     // Determine which bands are in the top N (tie-aware)
-    // Walk through sorted rankings; once we've accumulated >= topN bands,
-    // stop — but only at a rank boundary (complete the tie group).
     const topNBandIds = new Set();
     let accumulated = 0;
     let cutoffReached = false;
@@ -615,7 +656,6 @@ function renderRankings(data) {
         else if (rank === 2) rowClass = 'rank-silver';
         else if (rank === 3) rowClass = 'rank-bronze';
 
-        // Top-N rows get bold highlight class
         if (isTopN) rowClass += ' rank-top-n';
 
         let rowHtml = `<td><strong>${rank}</strong>`;
@@ -635,6 +675,229 @@ function renderRankings(data) {
         tr.innerHTML = rowHtml;
         tbody.appendChild(tr);
     });
+}
+
+// ============================================
+// EXCEL EXPORT
+// ============================================
+
+/**
+ * Download rankings as Excel file with orientation prompt
+ */
+async function downloadExcel() {
+    if (!currentRankingsData || !currentRankingsData.rankings) {
+        Swal.fire({ icon: 'info', title: 'No Data', text: 'Load rankings first before exporting.', confirmButtonColor: '#003366' });
+        return;
+    }
+
+    const { value: orientation } = await Swal.fire({
+        title: 'Excel Page Orientation',
+        input: 'radio',
+        inputOptions: { landscape: 'Landscape', portrait: 'Portrait' },
+        inputValue: 'landscape',
+        showCancelButton: true,
+        confirmButtonText: 'Download',
+        confirmButtonColor: '#003366',
+        cancelButtonColor: '#6c757d'
+    });
+
+    if (!orientation) return;
+
+    const data = currentRankingsData;
+    const settings = data.settings || {};
+    const topN = parseInt(document.getElementById('topNInput')?.value) || 8;
+    const eventTitle = settings.event_title || 'Battle of the Bands — NEUST 2026';
+    const eventSubtitle = settings.event_subtitle || '118th Founding Anniversary / 28th Charter Day';
+    const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const roundLabel = currentRankingsRoundId == 1 ? 'Elimination' : 'Grand Finals';
+
+    // Build worksheet data
+    const wsData = [];
+
+    // Header rows (rows 0-3)
+    wsData.push([eventTitle]);
+    wsData.push([eventSubtitle]);
+    wsData.push([`Official Rankings — ${currentDate}`]);
+    wsData.push([]); // blank row
+
+    // Table header (row 4)
+    const headerRow = ['Rank', 'Band Name'];
+    if (data.judges && data.judges.length > 0) {
+        data.judges.forEach(j => headerRow.push(j.name));
+    }
+    headerRow.push('Average Score');
+    wsData.push(headerRow);
+    const tableHeaderRowIdx = wsData.length - 1;
+
+    // Table body
+    const tableStartRow = wsData.length;
+    data.rankings.forEach(band => {
+        const row = [band.rank, band.band_name];
+        if (data.judges && data.judges.length > 0) {
+            data.judges.forEach(j => {
+                const s = band.judge_scores[j.id];
+                row.push(s !== undefined && s !== null ? parseFloat(s) : '—');
+            });
+        }
+        row.push(parseFloat(band.average_score));
+        wsData.push(row);
+    });
+    const tableEndRow = wsData.length - 1;
+
+    // Blank rows before judge footer (space for signatures)
+    wsData.push([]);
+    wsData.push([]);
+    wsData.push([]);
+
+    // Judge names in a single horizontal row
+    const judgeFooterRow = wsData.length;
+    const judgeRow = new Array(headerRow.length).fill('');
+    if (data.all_judges && data.all_judges.length > 0) {
+        data.all_judges.forEach((j, idx) => {
+            if (idx < headerRow.length) judgeRow[idx] = j.name;
+        });
+    }
+    wsData.push(judgeRow);
+
+    // Blank rows before signatories
+    wsData.push([]);
+    wsData.push([]);
+
+    // Signatories in a single horizontal row (name row + title row), spread across columns
+    let signatories = [];
+    try { signatories = JSON.parse((data.settings || {}).signatories || '[]'); } catch(e) {}
+    const sigStartRow = wsData.length;
+    if (signatories.length > 0) {
+        const sigNameRow  = new Array(headerRow.length).fill('');
+        const sigTitleRow = new Array(headerRow.length).fill('');
+        // Distribute signatories evenly across columns
+        const step = Math.max(1, Math.floor(headerRow.length / signatories.length));
+        signatories.forEach((sig, idx) => {
+            const col = Math.min(idx * step, headerRow.length - 1);
+            if (sig.name)  sigNameRow[col]  = sig.name;
+            if (sig.title) sigTitleRow[col] = sig.title;
+        });
+        wsData.push(sigNameRow);
+        wsData.push(sigTitleRow);
+    }
+
+    // Create workbook & worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const colCount = headerRow.length;
+    const lastCol = colCount - 1;
+
+    // --- Cell styling helpers ---
+    const border = (style) => ({
+        top: { style }, bottom: { style }, left: { style }, right: { style }
+    });
+    const centerBold = { font: { bold: true }, alignment: { horizontal: 'center' } };
+    const centerBoldLg = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center' } };
+    const centerBoldMd = { font: { bold: true, sz: 11 }, alignment: { horizontal: 'center' } };
+    const centerItalic = { font: { italic: true, sz: 10 }, alignment: { horizontal: 'center' } };
+    const thinBorder = border('thin');
+
+    // Merge header rows across all columns
+    if (!ws['!merges']) ws['!merges'] = [];
+    for (let r = 0; r < 3; r++) {
+        ws['!merges'].push({ s: { r, c: 0 }, e: { r, c: lastCol } });
+    }
+
+    // Style header rows
+    const cellRef = (r, c) => XLSX.utils.encode_cell({ r, c });
+    const setStyle = (r, c, style) => {
+        const ref = cellRef(r, c);
+        if (ws[ref]) ws[ref].s = style;
+    };
+
+    setStyle(0, 0, centerBoldLg);
+    setStyle(1, 0, centerBoldMd);
+    setStyle(2, 0, centerItalic);
+
+    // Style table header row (bold + borders + dark bg)
+    for (let c = 0; c < colCount; c++) {
+        const ref = cellRef(tableHeaderRowIdx, c);
+        if (ws[ref]) {
+            ws[ref].s = {
+                font: { bold: true, color: { rgb: 'FFFFFF' } },
+                fill: { fgColor: { rgb: '003366' } },
+                border: thinBorder,
+                alignment: { horizontal: 'center' }
+            };
+        }
+    }
+
+    // Style table body rows (borders + number format + top-N highlighting)
+    for (let r = tableStartRow; r <= tableEndRow; r++) {
+        const bandIdx = r - tableStartRow;
+        const band = data.rankings[bandIdx];
+        const isTopN = band && band.rank <= topN;
+
+        for (let c = 0; c < colCount; c++) {
+            const ref = cellRef(r, c);
+            if (ws[ref]) {
+                ws[ref].s = ws[ref].s || {};
+                ws[ref].s.border = thinBorder;
+
+                if (isTopN) {
+                    ws[ref].s.font = { bold: true };
+                    ws[ref].s.fill = { fgColor: { rgb: 'FFF8DC' } };
+                    if (c === 0) {
+                        ws[ref].s.border = {
+                            top: { style: 'thin' }, bottom: { style: 'thin' },
+                            right: { style: 'thin' },
+                            left: { style: 'medium', color: { rgb: '003366' } }
+                        };
+                    }
+                }
+
+                // Number columns: format to 2 decimal places
+                if (c >= 2 && typeof ws[ref].v === 'number') {
+                    ws[ref].z = '0.00';
+                }
+            }
+        }
+    }
+
+    // Style judge names in footer row (bold + underline, horizontal)
+    if (data.all_judges && data.all_judges.length > 0) {
+        data.all_judges.forEach((j, idx) => {
+            if (idx < colCount) {
+                const ref = cellRef(judgeFooterRow, idx);
+                if (ws[ref]) {
+                    ws[ref].s = { font: { bold: true, underline: true }, alignment: { horizontal: 'center' } };
+                }
+            }
+        });
+    }
+
+    // Style signatories (horizontal row: bold+underline name, italic title)
+    if (signatories.length > 0) {
+        const step = Math.max(1, Math.floor(colCount / signatories.length));
+        signatories.forEach((sig, idx) => {
+            const col = Math.min(idx * step, colCount - 1);
+            const fs  = sig.fontSize || 11;
+            if (sig.name) {
+                const ref = cellRef(sigStartRow, col);
+                if (ws[ref]) ws[ref].s = { font: { bold: true, underline: true, sz: fs }, alignment: { horizontal: 'center' } };
+            }
+            if (sig.title) {
+                const ref = cellRef(sigStartRow + 1, col);
+                if (ws[ref]) ws[ref].s = { font: { italic: true, sz: fs }, alignment: { horizontal: 'center' } };
+            }
+        });
+    }
+
+    // Set column widths
+    ws['!cols'] = [{ wch: 6 }, { wch: 22 }];
+    for (let i = 2; i < colCount; i++) ws['!cols'].push({ wch: 16 });
+
+    // Set print orientation
+    if (!ws['!print']) ws['!print'] = {};
+    ws['!print'].orientation = orientation;
+
+    XLSX.utils.book_append_sheet(wb, ws, roundLabel);
+    XLSX.writeFile(wb, `Rankings_${roundLabel.replace(/\s+/g, '_')}_${currentDate.replace(/,?\s+/g, '_')}.xlsx`);
 }
 
 // ============================================
@@ -738,6 +1001,22 @@ async function loadScores() {
     });
 
     container.innerHTML = html;
+}
+
+/**
+ * Filter score cards by band name
+ */
+function filterScoreCards(query) {
+    const container = document.getElementById('scoreCardsContainer');
+    if (!container) return;
+    const cards = container.querySelectorAll('.card');
+    const q = (query || '').toLowerCase().trim();
+    cards.forEach(card => {
+        const header = card.querySelector('.card-header');
+        if (!header) return;
+        const bandName = header.textContent.toLowerCase();
+        card.style.display = (!q || bandName.includes(q)) ? '' : 'none';
+    });
 }
 
 /**
@@ -859,6 +1138,184 @@ async function executeSystemReset() {
 }
 
 // ============================================
+// SETTINGS
+// ============================================
+
+/**
+ * Load settings into the settings form
+ */
+async function loadSettings() {
+    const data = await ajaxRequest('/BOB_SYSTEM/admin/ajax/settings_get.php');
+    if (!data.success) return;
+
+    const s = data.settings;
+    const el = (id) => document.getElementById(id);
+    if (el('settingEventTitle'))    el('settingEventTitle').value    = s.event_title || '';
+    if (el('settingEventSubtitle')) el('settingEventSubtitle').value = s.event_subtitle || '';
+
+    // Logo previews
+    if (s.logo_left && el('logoLeftPreview'))           el('logoLeftPreview').src = s.logo_left;
+    if (s.logo_right && el('logoRightPreview'))         el('logoRightPreview').src = s.logo_right;
+    if (s.logo_watermark && el('logoWatermarkPreview')) el('logoWatermarkPreview').src = s.logo_watermark;
+
+    // Signatories
+    const container = document.getElementById('signatoriesContainer');
+    if (container) {
+        container.innerHTML = '';
+        let signatories = [];
+        try { signatories = JSON.parse(s.signatories || '[]'); } catch(e) {}
+        if (!signatories.length) signatories = [{ name: '', title: '' }];
+        signatories.forEach(sig => addSignatoryRow(sig.name, sig.title, sig.fontSize));
+    }
+}
+
+/**
+ * Add a signatory row to the settings form
+ */
+function addSignatoryRow(name, title, fontSize) {
+    const container = document.getElementById('signatoriesContainer');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'signatory-row border rounded p-3 mb-3 position-relative';
+    row.innerHTML = `
+        <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2" onclick="this.closest('.signatory-row').remove()" title="Remove">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Signatory Name</label>
+                <input type="text" class="form-control sig-name" placeholder="e.g. Dr. Juan Dela Cruz" value="${escapeHtml(name || '')}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Signatory Title</label>
+                <input type="text" class="form-control sig-title" placeholder="e.g. Head, Student Affairs" value="${escapeHtml(title || '')}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Font Size (pt)</label>
+                <input type="number" class="form-control sig-fontsize" placeholder="11" min="7" max="20" value="${escapeHtml(String(fontSize || '11'))}">
+            </div>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+/**
+ * Upload a logo file for a given settings field
+ */
+async function uploadLogo(field, inputEl) {
+    if (!inputEl.files || !inputEl.files[0]) return;
+
+    const file = inputEl.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+        Swal.fire({ icon: 'warning', title: 'File Too Large', text: 'Maximum file size is 5MB.', confirmButtonColor: '#003366' });
+        inputEl.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('field', field);
+    formData.append('logo', file);
+
+    showLoading(true);
+    try {
+        const resp = await fetch('/BOB_SYSTEM/admin/ajax/logo_upload.php', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await resp.json();
+        showLoading(false);
+
+        if (data.success) {
+            Swal.fire({ icon: 'success', title: 'Uploaded!', text: data.message, timer: 1500, showConfirmButton: false });
+            // Update preview
+            const previewMap = {
+                logo_left: 'logoLeftPreview',
+                logo_right: 'logoRightPreview',
+                logo_watermark: 'logoWatermarkPreview'
+            };
+            const previewEl = document.getElementById(previewMap[field]);
+            if (previewEl && data.path) previewEl.src = data.path;
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Upload failed.', confirmButtonColor: '#003366' });
+        }
+    } catch (err) {
+        showLoading(false);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Upload request failed.', confirmButtonColor: '#003366' });
+    }
+    inputEl.value = '';
+}
+
+/**
+ * Save event settings
+ */
+async function saveSettings() {
+    // Collect signatories from dynamic rows
+    const sigRows = document.querySelectorAll('.signatory-row');
+    const signatories = [];
+    sigRows.forEach(row => {
+        const name     = row.querySelector('.sig-name')?.value.trim() || '';
+        const title    = row.querySelector('.sig-title')?.value.trim() || '';
+        const fontSize = parseInt(row.querySelector('.sig-fontsize')?.value) || 11;
+        if (name || title) signatories.push({ name, title, fontSize });
+    });
+
+    const payload = {
+        event_title:    document.getElementById('settingEventTitle')?.value.trim() || '',
+        event_subtitle: document.getElementById('settingEventSubtitle')?.value.trim() || '',
+        signatories:    signatories
+    };
+
+    const data = await ajaxRequest('/BOB_SYSTEM/admin/ajax/settings_save.php', 'POST', payload);
+    if (data.success) {
+        Swal.fire({ icon: 'success', title: 'Saved!', text: data.message, timer: 1500, showConfirmButton: false });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to save settings.', confirmButtonColor: '#003366' });
+    }
+}
+
+/**
+ * Toggle password field visibility
+ */
+function togglePwd(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+/**
+ * Save admin credentials
+ */
+async function saveAdminCredentials() {
+    const currentPassword = document.getElementById('adminCurrentPassword')?.value.trim() || '';
+    const name            = document.getElementById('adminName')?.value.trim() || '';
+    const email           = document.getElementById('adminEmail')?.value.trim() || '';
+    const newPassword     = document.getElementById('adminNewPassword')?.value.trim() || '';
+
+    if (!currentPassword) {
+        Swal.fire({ icon: 'warning', title: 'Required', text: 'Enter your current password to confirm changes.', confirmButtonColor: '#003366' });
+        return;
+    }
+
+    const payload = { current_password: currentPassword, name, email, new_password: newPassword };
+    const data = await ajaxRequest('/BOB_SYSTEM/admin/ajax/admin_update.php', 'POST', payload);
+
+    if (data.success) {
+        Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1800, showConfirmButton: false });
+        document.getElementById('adminCurrentPassword').value = '';
+        document.getElementById('adminNewPassword').value = '';
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to update credentials.', confirmButtonColor: '#003366' });
+    }
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -879,6 +1336,9 @@ document.addEventListener('DOMContentLoaded', function() {
         initAdminWebSocket();
     }
     if (document.getElementById('scoreCardsContainer')) loadScores();
+
+    // Settings page
+    if (document.getElementById('settingEventTitle')) loadSettings();
 
     // Rankings tabs
     const rankingTabs = document.querySelectorAll('[data-round-id]');

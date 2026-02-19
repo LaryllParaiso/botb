@@ -15,6 +15,10 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
         <div class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Score Management</h4>
+                <div class="input-group" style="max-width: 250px;">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="scoreSearchInput" placeholder="Search for band..." oninput="filterScoreCards(this.value)">
+                </div>
             </div>
 
             <!-- Score cards container -->
