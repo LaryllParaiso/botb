@@ -21,7 +21,7 @@ function initAdminWebSocket() {
     try {
         adminWs = new WebSocket(WS_URL);
 
-        adminWs.onopen = function() {
+        adminWs.onopen = function () {
             console.log('[Admin WS] Connected');
             adminWsConnected = true;
 
@@ -34,7 +34,7 @@ function initAdminWebSocket() {
             adminWs.send(JSON.stringify({ action: 'register', role: 'admin', userId: null }));
         };
 
-        adminWs.onmessage = function(e) {
+        adminWs.onmessage = function (e) {
             try {
                 const msg = JSON.parse(e.data);
                 console.log('[Admin WS] Message:', msg);
@@ -53,7 +53,7 @@ function initAdminWebSocket() {
             }
         };
 
-        adminWs.onclose = function() {
+        adminWs.onclose = function () {
             console.warn('[Admin WS] Disconnected');
             adminWsConnected = false;
             adminWs = null;
@@ -62,7 +62,7 @@ function initAdminWebSocket() {
             scheduleAdminReconnect();
         };
 
-        adminWs.onerror = function() {
+        adminWs.onerror = function () {
             adminWsConnected = false;
         };
     } catch (err) {
@@ -592,7 +592,7 @@ function renderRankings(data) {
         const sigContainer = document.getElementById('printSignatories');
         if (sigContainer) {
             let signatories = [];
-            try { signatories = JSON.parse(data.settings.signatories || '[]'); } catch(e) {}
+            try { signatories = JSON.parse(data.settings.signatories || '[]'); } catch (e) { }
             const labels = ['Prepared by:', 'Confirmed by:', 'Approved by:'];
 
             sigContainer.innerHTML = signatories.slice(0, 3).map((sig, idx) => {
@@ -776,13 +776,13 @@ async function downloadExcel() {
 
     // Signatories in a single horizontal row with labels (Prepared/Confirmed/Approved)
     let signatories = [];
-    try { signatories = JSON.parse((data.settings || {}).signatories || '[]'); } catch(e) {}
+    try { signatories = JSON.parse((data.settings || {}).signatories || '[]'); } catch (e) { }
     const sigStartRow = wsData.length;
     if (signatories.length > 0) {
         const labels = ['Prepared by:', 'Confirmed by:', 'Approved by:'];
         const maxSig = Math.min(3, signatories.length);
 
-        const sigLabelRow   = new Array(headerRow.length).fill('');
+        const sigLabelRow = new Array(headerRow.length).fill('');
         const sigContentRow = new Array(headerRow.length).fill('');
 
         // Fixed column pairs for up to three signatories:
@@ -794,9 +794,9 @@ async function downloadExcel() {
         ];
 
         for (let i = 0; i < maxSig && i < pairs.length; i++) {
-            const sig   = signatories[i];
-            const pair  = pairs[i];
-            const labelCol   = pair.labelCol;
+            const sig = signatories[i];
+            const pair = pairs[i];
+            const labelCol = pair.labelCol;
             const contentCol = pair.contentCol;
 
             if (labelCol < headerRow.length && labels[i]) {
@@ -804,7 +804,7 @@ async function downloadExcel() {
             }
 
             if (contentCol < headerRow.length && sig) {
-                const name  = sig.name  || '';
+                const name = sig.name || '';
                 const title = sig.title || '';
                 if (name || title) {
                     sigContentRow[contentCol] = title ? `${name}\n${title}` : name;
@@ -917,7 +917,7 @@ async function downloadExcel() {
 
         for (let i = 0; i < maxSig && i < pairs.length; i++) {
             const sig = signatories[i];
-            const fs  = (sig && sig.fontSize) || 11;
+            const fs = (sig && sig.fontSize) || 11;
             const { labelCol, contentCol } = pairs[i];
 
             // Label style
@@ -1102,11 +1102,11 @@ function openEditScore(judgeId, judgeName, bandId, bandName, criteriaId, criteri
  * Save edited score
  */
 async function saveScoreEdit() {
-    const judgeId    = parseInt(document.getElementById('editScoreJudgeId').value);
-    const bandId     = parseInt(document.getElementById('editScoreBandId').value);
+    const judgeId = parseInt(document.getElementById('editScoreJudgeId').value);
+    const bandId = parseInt(document.getElementById('editScoreBandId').value);
     const criteriaId = parseInt(document.getElementById('editScoreCriteriaId').value);
-    const maxScore   = parseFloat(document.getElementById('editScoreMax').value);
-    const scoreVal   = parseFloat(document.getElementById('editScoreValue').value);
+    const maxScore = parseFloat(document.getElementById('editScoreMax').value);
+    const scoreVal = parseFloat(document.getElementById('editScoreValue').value);
 
     const input = document.getElementById('editScoreValue');
     if (isNaN(scoreVal) || scoreVal < 0 || scoreVal > maxScore) {
@@ -1206,12 +1206,12 @@ async function loadSettings() {
 
     const s = data.settings;
     const el = (id) => document.getElementById(id);
-    if (el('settingEventTitle'))    el('settingEventTitle').value    = s.event_title || '';
+    if (el('settingEventTitle')) el('settingEventTitle').value = s.event_title || '';
     if (el('settingEventSubtitle')) el('settingEventSubtitle').value = s.event_subtitle || '';
 
     // Logo previews
-    if (s.logo_left && el('logoLeftPreview'))           el('logoLeftPreview').src = s.logo_left;
-    if (s.logo_right && el('logoRightPreview'))         el('logoRightPreview').src = s.logo_right;
+    if (s.logo_left && el('logoLeftPreview')) el('logoLeftPreview').src = s.logo_left;
+    if (s.logo_right && el('logoRightPreview')) el('logoRightPreview').src = s.logo_right;
     if (s.logo_watermark && el('logoWatermarkPreview')) el('logoWatermarkPreview').src = s.logo_watermark;
 
     // Signatories
@@ -1219,7 +1219,7 @@ async function loadSettings() {
     if (container) {
         container.innerHTML = '';
         let signatories = [];
-        try { signatories = JSON.parse(s.signatories || '[]'); } catch(e) {}
+        try { signatories = JSON.parse(s.signatories || '[]'); } catch (e) { }
         if (!signatories.length) signatories = [{ name: '', title: '' }];
         signatories.forEach(sig => addSignatoryRow(sig.name, sig.title, sig.fontSize));
     }
@@ -1309,16 +1309,16 @@ async function saveSettings() {
     const sigRows = document.querySelectorAll('.signatory-row');
     const signatories = [];
     sigRows.forEach(row => {
-        const name     = row.querySelector('.sig-name')?.value.trim() || '';
-        const title    = row.querySelector('.sig-title')?.value.trim() || '';
+        const name = row.querySelector('.sig-name')?.value.trim() || '';
+        const title = row.querySelector('.sig-title')?.value.trim() || '';
         const fontSize = parseInt(row.querySelector('.sig-fontsize')?.value) || 11;
         if (name || title) signatories.push({ name, title, fontSize });
     });
 
     const payload = {
-        event_title:    document.getElementById('settingEventTitle')?.value.trim() || '',
+        event_title: document.getElementById('settingEventTitle')?.value.trim() || '',
         event_subtitle: document.getElementById('settingEventSubtitle')?.value.trim() || '',
-        signatories:    signatories
+        signatories: signatories
     };
 
     const data = await ajaxRequest('/BOB_SYSTEM/admin/ajax/settings_save.php', 'POST', payload);
@@ -1350,9 +1350,9 @@ function togglePwd(fieldId, btn) {
  */
 async function saveAdminCredentials() {
     const currentPassword = document.getElementById('adminCurrentPassword')?.value.trim() || '';
-    const name            = document.getElementById('adminName')?.value.trim() || '';
-    const email           = document.getElementById('adminEmail')?.value.trim() || '';
-    const newPassword     = document.getElementById('adminNewPassword')?.value.trim() || '';
+    const name = document.getElementById('adminName')?.value.trim() || '';
+    const email = document.getElementById('adminEmail')?.value.trim() || '';
+    const newPassword = document.getElementById('adminNewPassword')?.value.trim() || '';
 
     if (!currentPassword) {
         Swal.fire({ icon: 'warning', title: 'Required', text: 'Enter your current password to confirm changes.', confirmButtonColor: '#003366' });
@@ -1375,7 +1375,7 @@ async function saveAdminCredentials() {
 // INITIALIZATION
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Judge form
     const judgeForm = document.getElementById('judgeForm');
     if (judgeForm) judgeForm.addEventListener('submit', saveJudge);
@@ -1399,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Rankings tabs
     const rankingTabs = document.querySelectorAll('[data-round-id]');
     rankingTabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function() {
+        tab.addEventListener('shown.bs.tab', function () {
             loadRankings(this.dataset.roundId);
         });
     });

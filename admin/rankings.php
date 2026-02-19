@@ -64,34 +64,37 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
                 </li>
             </ul>
 
-            <!-- Tab Content -->
-            <div class="tab-content">
+            <!-- Tab Content (tabs just control round; table is shared below) -->
+            <div class="tab-content mb-3">
                 <div class="tab-pane fade show active" id="elimination-pane" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="rankingsTable">
-                                    <thead class="table-dark" id="rankingsTableHead">
-                                        <tr>
-                                            <th>Rank</th>
-                                            <th>Band Name</th>
-                                            <th>Average Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rankingsTableBody">
-                                        <tr>
-                                            <td colspan="10" class="text-center text-muted py-4">
-                                                <div class="spinner-border spinner-border-sm" role="status"></div> Loading rankings...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Elimination round selected; shared table below -->
                 </div>
                 <div class="tab-pane fade" id="finals-pane" role="tabpanel">
-                    <!-- Reuses same table via JS -->
+                    <!-- Grand finals selected; shared table below -->
+                </div>
+            </div>
+
+            <!-- Shared rankings table used for both rounds -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="rankingsTable">
+                            <thead class="table-dark" id="rankingsTableHead">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Band Name</th>
+                                    <th>Average Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingsTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div> Loading rankings...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
