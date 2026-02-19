@@ -588,14 +588,25 @@ function renderRankings(data) {
         if (logoRight && data.settings.logo_right) logoRight.src = data.settings.logo_right;
         if (watermark && data.settings.logo_watermark) watermark.src = data.settings.logo_watermark;
 
-        // Signatories (multiple, centered, with custom font size)
+        // Signatories (multiple, with custom font size and fixed labels)
         const sigContainer = document.getElementById('printSignatories');
         if (sigContainer) {
             let signatories = [];
             try { signatories = JSON.parse(data.settings.signatories || '[]'); } catch(e) {}
-            sigContainer.innerHTML = signatories.map(sig => {
+            const labels = ['Prepared by:', 'Confirmed by:', 'Approved by:'];
+
+            sigContainer.innerHTML = signatories.slice(0, 3).map((sig, idx) => {
                 const fs = sig.fontSize ? `font-size:${sig.fontSize}pt;` : '';
-                return `<div class="print-signatory-block" style="${fs}"><strong>${escapeHtml(sig.name || '')}</strong><br><span>${escapeHtml(sig.title || '')}</span></div>`;
+                const label = labels[idx] || '';
+                return `
+                    <div class="print-signatory-block">
+                        <div class="print-signatory-label">${escapeHtml(label)}</div>
+                        <div class="print-signatory-name" style="${fs}">
+                            <strong>${escapeHtml(sig.name || '')}</strong><br>
+                            <span>${escapeHtml(sig.title || '')}</span>
+                        </div>
+                    </div>
+                `;
             }).join('');
         }
     }
@@ -763,22 +774,46 @@ async function downloadExcel() {
     wsData.push([]);
     wsData.push([]);
 
-    // Signatories in a single horizontal row (name row + title row), spread across columns
+    // Signatories in a single horizontal row with labels (Prepared/Confirmed/Approved)
     let signatories = [];
     try { signatories = JSON.parse((data.settings || {}).signatories || '[]'); } catch(e) {}
     const sigStartRow = wsData.length;
     if (signatories.length > 0) {
-        const sigNameRow  = new Array(headerRow.length).fill('');
-        const sigTitleRow = new Array(headerRow.length).fill('');
-        // Distribute signatories evenly across columns
-        const step = Math.max(1, Math.floor(headerRow.length / signatories.length));
-        signatories.forEach((sig, idx) => {
-            const col = Math.min(idx * step, headerRow.length - 1);
-            if (sig.name)  sigNameRow[col]  = sig.name;
-            if (sig.title) sigTitleRow[col] = sig.title;
-        });
-        wsData.push(sigNameRow);
-        wsData.push(sigTitleRow);
+        const labels = ['Prepared by:', 'Confirmed by:', 'Approved by:'];
+        const maxSig = Math.min(3, signatories.length);
+
+        const sigLabelRow   = new Array(headerRow.length).fill('');
+        const sigContentRow = new Array(headerRow.length).fill('');
+
+        // Fixed column pairs for up to three signatories:
+        // 1st: (0,1), 2nd: (2,3), 3rd: (4,5)
+        const pairs = [
+            { labelCol: 0, contentCol: 1 },
+            { labelCol: 2, contentCol: 3 },
+            { labelCol: 4, contentCol: 5 }
+        ];
+
+        for (let i = 0; i < maxSig && i < pairs.length; i++) {
+            const sig   = signatories[i];
+            const pair  = pairs[i];
+            const labelCol   = pair.labelCol;
+            const contentCol = pair.contentCol;
+
+            if (labelCol < headerRow.length && labels[i]) {
+                sigLabelRow[labelCol] = labels[i];
+            }
+
+            if (contentCol < headerRow.length && sig) {
+                const name  = sig.name  || '';
+                const title = sig.title || '';
+                if (name || title) {
+                    sigContentRow[contentCol] = title ? `${name}\n${title}` : name;
+                }
+            }
+        }
+
+        wsData.push(sigLabelRow);
+        wsData.push(sigContentRow);
     }
 
     // Create workbook & worksheet
@@ -871,21 +906,42 @@ async function downloadExcel() {
         });
     }
 
-    // Style signatories (horizontal row: bold+underline name, italic title)
+    // Style signatories (horizontal: labels on the left, bold+underline name, title below)
     if (signatories.length > 0) {
-        const step = Math.max(1, Math.floor(colCount / signatories.length));
-        signatories.forEach((sig, idx) => {
-            const col = Math.min(idx * step, colCount - 1);
-            const fs  = sig.fontSize || 11;
-            if (sig.name) {
-                const ref = cellRef(sigStartRow, col);
-                if (ws[ref]) ws[ref].s = { font: { bold: true, underline: true, sz: fs }, alignment: { horizontal: 'center' } };
+        const maxSig = Math.min(3, signatories.length);
+        const pairs = [
+            { labelCol: 0, contentCol: 1 },
+            { labelCol: 2, contentCol: 3 },
+            { labelCol: 4, contentCol: 5 }
+        ];
+
+        for (let i = 0; i < maxSig && i < pairs.length; i++) {
+            const sig = signatories[i];
+            const fs  = (sig && sig.fontSize) || 11;
+            const { labelCol, contentCol } = pairs[i];
+
+            // Label style
+            if (labelCol < colCount) {
+                const refLabel = cellRef(sigStartRow, labelCol);
+                if (ws[refLabel]) {
+                    ws[refLabel].s = {
+                        font: { italic: true, sz: 9 },
+                        alignment: { horizontal: 'right' }
+                    };
+                }
             }
-            if (sig.title) {
-                const ref = cellRef(sigStartRow + 1, col);
-                if (ws[ref]) ws[ref].s = { font: { italic: true, sz: fs }, alignment: { horizontal: 'center' } };
+
+            // Content (name + title stacked)
+            if (contentCol < colCount) {
+                const refContent = cellRef(sigStartRow + 1, contentCol);
+                if (ws[refContent]) {
+                    ws[refContent].s = {
+                        font: { bold: true, underline: true, sz: fs },
+                        alignment: { horizontal: 'left', vertical: 'top', wrapText: true }
+                    };
+                }
             }
-        });
+        }
     }
 
     // Set column widths

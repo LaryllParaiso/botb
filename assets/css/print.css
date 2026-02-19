@@ -155,19 +155,31 @@
     .print-signatories {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-around;
+        justify-content: space-between;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 1.5rem;
         margin-top: 2rem;
     }
 
     .print-signatory-block {
         flex: 1;
-        text-align: center;
-        min-width: 120px;
+        min-width: 140px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 0.25rem;
+        text-align: left;
     }
 
-    .print-signatory-block strong {
+    /* Label above the signatory name (top-left) */
+    .print-signatory-label {
+        font-size: 9pt;
+        white-space: nowrap;
+        margin-bottom: 0.15rem;
+    }
+
+    .print-signatory-name strong {
         text-decoration: underline;
     }
 
