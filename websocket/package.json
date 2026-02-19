@@ -1,0 +1,13 @@
+{
+  "name": "botb-websocket-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Battle of the Bands Tabulator real-time updates",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

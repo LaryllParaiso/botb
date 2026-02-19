@@ -1,0 +1,233 @@
+/* Battle of the Bands Tabulator — Brand Colors & Minimal Custom Styles */
+
+:root {
+    --botb-primary: #003366;
+    --botb-accent: #FFD700;
+    --botb-light: #f8f9fa;
+}
+
+/* Override Bootstrap primary with NEUST brand color */
+.bg-primary {
+    background-color: var(--botb-primary) !important;
+}
+
+.btn-primary {
+    background-color: var(--botb-primary);
+    border-color: var(--botb-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #002244;
+    border-color: #002244;
+}
+
+.btn-outline-primary {
+    color: var(--botb-primary);
+    border-color: var(--botb-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--botb-primary);
+    border-color: var(--botb-primary);
+    color: #fff;
+}
+
+.text-primary {
+    color: var(--botb-primary) !important;
+}
+
+.border-primary {
+    border-color: var(--botb-primary) !important;
+}
+
+/* Accent / Gold */
+.bg-accent {
+    background-color: var(--botb-accent) !important;
+}
+
+.text-accent {
+    color: var(--botb-accent) !important;
+}
+
+/* Login page */
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--botb-primary) 0%, #001a33 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-card .card-header {
+    background-color: var(--botb-primary);
+    color: #fff;
+    text-align: center;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 1.5rem;
+}
+
+/* Admin sidebar active link */
+#sidebarDesktop .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Scoring live total box */
+.score-total-box {
+    background-color: var(--botb-primary);
+    color: #fff;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Waiting animation — keep Bootstrap rotation, add halo pulse */
+.waiting-pulse {
+    position: relative;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+.waiting-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 51, 102, 0.25);
+    animation: waiting-pulse-halo 1.8s ease-in-out infinite;
+}
+
+@keyframes waiting-pulse-halo {
+    0% { opacity: 0.7; transform: scale(0.95); }
+    50% { opacity: 0.2; transform: scale(1.25); }
+    100% { opacity: 0.7; transform: scale(0.95); }
+}
+
+/* Rankings highlights */
+.rank-gold {
+    background-color: #fff8dc !important;
+    border-left: 4px solid #FFD700;
+}
+
+.rank-silver {
+    background-color: #f5f5f5 !important;
+    border-left: 4px solid #C0C0C0;
+}
+
+.rank-bronze {
+    background-color: #fdf5e6 !important;
+    border-left: 4px solid #CD7F32;
+}
+
+/* Top-N qualifying bands highlight */
+.rank-top-n td {
+    font-weight: 700;
+}
+
+.rank-top-n {
+    border-left: 4px solid var(--botb-primary) !important;
+}
+
+/* Hide top-n badge on non-rankings pages */
+.top-n-badge {
+    font-size: 0.65rem;
+    vertical-align: middle;
+}
+
+/* Badge overrides */
+.badge-now-performing {
+    background-color: #198754;
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+.badge-standby {
+    background-color: #6c757d;
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+/* Responsive main content on mobile */
+@media (max-width: 991.98px) {
+    #mainContent,
+    #judgeMainContent {
+        margin-left: 0 !important;
+    }
+
+    /* Admin tables: prevent horizontal overflow on small screens */
+    .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    /* Stack action buttons vertically on small screens */
+    .btn-group-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+/* Judge sidebar active link hover */
+#judgeSidebarDesktop .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Judge pages: add breathing room from the top */
+#judgeMainContent {
+    padding-top: 1.5rem;
+}
+
+@media (max-width: 991.98px) {
+    #judgeMainContent {
+        padding-top: 1rem;
+    }
+}
+
+/* Admin compact tables — readable with horizontal scroll */
+.admin-table-compact {
+    min-width: 550px;
+}
+
+.admin-table-compact th,
+.admin-table-compact td {
+    padding: 0.4rem 0.5rem;
+    vertical-align: middle;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .admin-table-compact th,
+    .admin-table-compact td {
+        padding: 0.35rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .admin-table-compact .btn {
+        padding: 0.2rem 0.3rem;
+        font-size: 0.75rem;
+    }
+}
