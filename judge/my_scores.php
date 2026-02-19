@@ -12,12 +12,18 @@ require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar_judge.php';
 ?>
 
-        <div class="container-fluid p-4">
+        <div class="container-fluid px-3 px-md-4 py-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 text-primary"><i class="bi bi-clock-history"></i> My Recent Scores</h5>
-                <button class="btn btn-sm btn-outline-primary" onclick="loadMyScores()" title="Refresh">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="scoreSearchInput" placeholder="Search for band...">
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadMyScores()" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
             </div>
             <div id="recentScoresContainer">
                 <div class="text-center text-muted py-4">
@@ -28,7 +34,7 @@ require_once __DIR__ . '/../includes/sidebar_judge.php';
         </div>
 
     </div><!-- end judgeMainContent -->
-</div><!-- end d-flex -->
+</div><!-- end wrapper -->
 
 <!-- Loading overlay -->
 <div class="loading-overlay" id="loadingOverlay" style="display: none;">

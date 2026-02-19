@@ -284,7 +284,7 @@ async function loadBands() {
 
         let activateBtn;
         if (band.is_active == 1) {
-            activateBtn = `<button class="btn btn-sm btn-success" disabled><i class="bi bi-broadcast"></i> Active</button>`;
+            activateBtn = `<button class="btn btn-sm btn-danger" onclick="deactivateBand('${escapeHtml(band.name)}')"><i class="bi bi-stop-circle"></i> Stop</button>`;
         } else if (band.is_finished) {
             activateBtn = `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-check-circle-fill"></i> Done</button>`;
         } else {
@@ -421,6 +421,32 @@ async function activateBand(id, name) {
         loadPendingJudges();
     } else {
         Swal.fire({ icon: 'error', title: 'Cannot Activate', text: data.message || 'Failed to activate band.', confirmButtonColor: '#003366' });
+    }
+}
+
+/**
+ * Deactivate (stop) the currently active band
+ */
+async function deactivateBand(name) {
+    const result = await Swal.fire({
+        title: 'Stop Performance?',
+        html: `Deactivate <strong>${escapeHtml(name)}</strong>?<br><small class="text-muted">No band will be performing and judges will return to the waiting screen.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-stop-circle"></i> Yes, stop',
+        cancelButtonText: 'Cancel'
+    });
+    if (!result.isConfirmed) return;
+
+    const data = await ajaxRequest('/BOB_SYSTEM/admin/ajax/band_deactivate.php', 'POST', {});
+    if (data.success) {
+        Swal.fire({ icon: 'success', title: 'Stopped', html: `<strong>${escapeHtml(name)}</strong> has been deactivated.`, timer: 2000, showConfirmButton: false });
+        loadBands();
+        loadPendingJudges();
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to deactivate band.', confirmButtonColor: '#003366' });
     }
 }
 

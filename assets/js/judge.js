@@ -130,7 +130,9 @@ async function fetchActiveBandDetails() {
             const band = data.band;
 
             if (data.is_finalized) {
-                showSubmittedState(band, data.scores, data.weighted_total);
+                // Already submitted for this band — show waiting state
+                currentBandId = parseInt(band.id);
+                showWaitingState();
                 return;
             }
 
@@ -174,7 +176,6 @@ function stopPolling() {
 function showWaitingState() {
     document.getElementById('waitingState').style.display = '';
     document.getElementById('scoringState').style.display = 'none';
-    document.getElementById('submittedState').style.display = 'none';
 }
 
 /**
@@ -183,7 +184,6 @@ function showWaitingState() {
 function showScoringForm(band, criteria) {
     document.getElementById('waitingState').style.display = 'none';
     document.getElementById('scoringState').style.display = '';
-    document.getElementById('submittedState').style.display = 'none';
 
     document.getElementById('bandName').textContent = band.name;
     document.getElementById('roundBadge').textContent =
@@ -215,38 +215,6 @@ function showScoringForm(band, criteria) {
 
     document.getElementById('weightedTotal').textContent = '0.00';
     document.getElementById('submitBtn').disabled = true;
-}
-
-/**
- * Show submitted read-only state
- */
-function showSubmittedState(band, scores, weightedTotal) {
-    document.getElementById('waitingState').style.display = 'none';
-    document.getElementById('scoringState').style.display = 'none';
-    document.getElementById('submittedState').style.display = '';
-
-    // Keep SSE alive so judge sees next band change instantly
-    // Only stop polling fallback
-    stopPolling();
-
-    const container = document.getElementById('submittedScores');
-    container.innerHTML = '';
-
-    if (scores && scores.length > 0) {
-        scores.forEach(s => {
-            const div = document.createElement('div');
-            div.className = 'd-flex justify-content-between py-2 border-bottom';
-            div.innerHTML = `
-                <span class="fw-semibold">${escapeHtml(s.criteria_name)}
-                    <span class="text-muted fw-normal"> — ${parseFloat(s.weight).toFixed(0)}%</span>
-                </span>
-                <span class="badge bg-primary fs-6">${parseFloat(s.score).toFixed(2)}</span>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    document.getElementById('submittedTotal').textContent = parseFloat(weightedTotal).toFixed(2);
 }
 
 /**
@@ -330,7 +298,7 @@ if (scoringFormEl) {
 
             if (data.success) {
                 Swal.fire({ icon: 'success', title: 'Submitted!', text: 'Your scores have been recorded.', timer: 1800, showConfirmButton: false });
-                await fetchActiveBandDetails();
+                showWaitingState();
                 loadMyScores();
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to submit scores.', confirmButtonColor: '#003366' });
@@ -357,6 +325,8 @@ function escapeHtml(text) {
 // RECENT SCORES HISTORY (read-only)
 // ============================================
 
+let allScoreBands = []; // cached for search filtering
+
 /**
  * Load the judge's own submitted scores history
  */
@@ -371,6 +341,7 @@ async function loadMyScores() {
         const data = await res.json();
 
         if (!data.success || !data.bands || data.bands.length === 0) {
+            allScoreBands = [];
             container.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-inbox" style="font-size: 2rem;"></i>
@@ -379,75 +350,104 @@ async function loadMyScores() {
             return;
         }
 
-        let html = '<div class="accordion" id="recentScoresAccordion">';
-
-        data.bands.forEach((band, idx) => {
-            const collapseId = `scoreCollapse${idx}`;
-            const roundLabel = band.round_name === 'elimination' ? 'Elimination' : 'Grand Finals';
-            const isFirst = idx === 0;
-
-            html += `
-            <div class="accordion-item border-0 mb-3 shadow-sm rounded overflow-hidden">
-                <h2 class="accordion-header">
-                    <button class="accordion-button ${isFirst ? '' : 'collapsed'} py-2 px-3" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#${collapseId}"
-                            aria-expanded="${isFirst}" aria-controls="${collapseId}">
-                        <div class="d-flex justify-content-between align-items-center w-100 me-2">
-                            <div>
-                                <strong>${escapeHtml(band.band_name)}</strong>
-                                <span class="badge bg-secondary ms-2" style="font-size:0.7rem;">${escapeHtml(roundLabel)}</span>
-                            </div>
-                            <span class="badge bg-primary rounded-pill">${parseFloat(band.total).toFixed(2)} pts</span>
-                        </div>
-                    </button>
-                </h2>
-                <div id="${collapseId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}"
-                     data-bs-parent="#recentScoresAccordion">
-                    <div class="accordion-body p-0">
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">Criteria</th>
-                                    <th class="text-center" style="width:70px;">Max</th>
-                                    <th class="text-end pe-3" style="width:80px;">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-
-            band.criteria.forEach(c => {
-                const pct = c.weight > 0 ? ((c.score / c.weight) * 100).toFixed(0) : 0;
-                html += `
-                                <tr>
-                                    <td class="ps-3">${escapeHtml(c.criteria_name)}</td>
-                                    <td class="text-center text-muted">${parseFloat(c.weight).toFixed(0)}</td>
-                                    <td class="text-end pe-3">
-                                        <strong>${parseFloat(c.score).toFixed(2)}</strong>
-                                        <small class="text-muted ms-1">(${pct}%)</small>
-                                    </td>
-                                </tr>`;
-            });
-
-            html += `
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <td class="ps-3 fw-bold" colspan="2">Total</td>
-                                    <td class="text-end pe-3 fw-bold">${parseFloat(band.total).toFixed(2)}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        html += '</div>';
-        container.innerHTML = html;
+        allScoreBands = data.bands;
+        renderScoresList(allScoreBands);
 
     } catch (err) {
         console.error('Load my scores error:', err);
         container.innerHTML = '<div class="alert alert-danger">Failed to load score history.</div>';
     }
+}
+
+/**
+ * Render the recent scores accordion from a bands array
+ */
+function renderScoresList(bands) {
+    const container = document.getElementById('recentScoresContainer');
+    if (!container) return;
+
+    if (!bands || bands.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No scores submitted yet.</p>
+            </div>`;
+        return;
+    }
+
+    let html = '<div class="accordion" id="recentScoresAccordion">';
+
+    bands.forEach((band, idx) => {
+        const collapseId = `scoreCollapse${idx}`;
+        const roundLabel = band.round_name === 'elimination' ? 'Elimination' : 'Grand Finals';
+        const roundClass = band.round_name === 'elimination' ? 'bg-danger' : 'bg-success';
+        const isFirst = idx === 0;
+
+        html += `
+        <div class="accordion-item border-0 mb-2 rounded overflow-hidden score-accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button ${isFirst ? '' : 'collapsed'} py-2 px-3 score-accordion-btn" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+                        aria-expanded="${isFirst}" aria-controls="${collapseId}">
+                    <span class="fw-semibold me-2">${escapeHtml(band.band_name)}</span>
+                    <span class="badge ${roundClass} rounded-pill" style="font-size:0.65rem;">${escapeHtml(roundLabel)}</span>
+                </button>
+            </h2>
+            <div id="${collapseId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}"
+                 data-bs-parent="#recentScoresAccordion">
+                <div class="accordion-body p-0">
+                    <table class="table table-sm mb-0 score-detail-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Criteria</th>
+                                <th class="text-end" style="width:60px;">Max</th>
+                                <th class="text-end pe-3" style="width:80px;">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+        band.criteria.forEach(c => {
+            const pct = c.weight > 0 ? ((c.score / c.weight) * 100).toFixed(0) : 0;
+            html += `
+                            <tr>
+                                <td class="ps-3">${escapeHtml(c.criteria_name)}</td>
+                                <td class="text-end text-muted">${parseFloat(c.weight).toFixed(0)}</td>
+                                <td class="text-end pe-3">
+                                    <strong>${parseFloat(c.score).toFixed(2)}</strong>
+                                    <small class="text-muted ms-1">(${pct}%)</small>
+                                </td>
+                            </tr>`;
+        });
+
+        html += `
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td class="ps-3 fw-bold" colspan="2">Total</td>
+                                <td class="text-end pe-3 fw-bold">${parseFloat(band.total).toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Filter recent scores by band name search
+ */
+function filterScores(query) {
+    if (!query || query.trim() === '') {
+        renderScoresList(allScoreBands);
+        return;
+    }
+    const q = query.toLowerCase().trim();
+    const filtered = allScoreBands.filter(b => b.band_name.toLowerCase().includes(q));
+    renderScoresList(filtered);
 }
 
 // Start WebSocket + scoring only on the scoring page (where bandDisplay exists)
@@ -458,3 +458,11 @@ if (document.getElementById('bandDisplay')) {
 
 // Load recent scores on any page that has the container
 loadMyScores();
+
+// Attach search filter
+const scoreSearchInput = document.getElementById('scoreSearchInput');
+if (scoreSearchInput) {
+    scoreSearchInput.addEventListener('input', function() {
+        filterScores(this.value);
+    });
+}

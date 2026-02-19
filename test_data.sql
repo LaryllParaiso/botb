@@ -1,13 +1,29 @@
 -- ==================================================
--- Battle of the Bands Tabulator — TEST DATA SEED
+-- Stress test scenarios targeted:
+--   1) Perfect Sweep & Tie Check (Elimination):
+--      - Lyrical Nova receives near-perfect 100s from every judge
+--      - Neon Pulse and Prismatic Tide end with identical totals to verify tie-aware rankings
+--   2) Photo Finish Finals:
+--      - Solaris Drift vs Aurora Bloom separated by a single point across 3 judges
+--   3) Depth Check:
+--      - Large slate of bands to verify pagination and top-N logic
+--   4) Multi-Judge Variance:
+--      - Three judges with distinct scoring styles to surface averaging precision (two decimals)
+--   5) Large-field tie:
+--      - 15 total bands with elimination slots #8-10 sharing identical totals
+-- ==================================================
+--
 -- Use in phpMyAdmin or mysql CLI:  SOURCE test_data.sql;
 -- This will:
 --   * Reset scores, bands, and judge users (keeps admin)
---   * Insert 4 bands (2 per round) with performance order
---   * Insert 2 judges with bcrypt-hashed passwords
---   * Insert sample finalized scores for both rounds
+--   * Insert 15 bands (10 elimination, 5 grand finals)
+--   * Insert 3 judges with bcrypt-hashed passwords
+--   * Insert sample finalized scores for both rounds covering the scenarios above
 -- Admin stays: admin@botb.com / Admin@2026
--- Judge creds: judge1@botb.com / Judge1@2026, judge2@botb.com / Judge2@2026
+-- Judge creds:
+--   - judge1@botb.com / Judge1@2026
+--   - judge2@botb.com / Judge2@2026
+--   - judge3@botb.com / Judge3@2026
 -- ==================================================
 
 USE botb_tabulator;
@@ -25,7 +41,6 @@ ALTER TABLE scores AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- Insert judges (bcrypt hashes precomputed)
 INSERT INTO users (name, email, password, role) VALUES
   ('Judge One',   'judge1@botb.com', '$2y$12$4v2e6mzf81kywmQYwD73FO3eSEBhJq7wRmv4lwpTjshV1W9rv3tt2', 'judge');
 SET @judge1_id = LAST_INSERT_ID();
@@ -34,13 +49,28 @@ INSERT INTO users (name, email, password, role) VALUES
   ('Judge Two',   'judge2@botb.com', '$2y$12$C/BwIQM4yygb5LTFpC/4qeJjG29RaWdCm6DxjPEx6C5ps2wVjPlx2', 'judge');
 SET @judge2_id = LAST_INSERT_ID();
 
--- Insert bands
+INSERT INTO users (name, email, password, role) VALUES
+  ('Judge Three', 'judge3@botb.com', '$2y$12$gD6R6IdbEFyGkASx.uVKAeI9iGZJTmTO89TrCB2PzE3WeI9PREHNW', 'judge');
+SET @judge3_id = LAST_INSERT_ID();
+
 INSERT INTO bands (name, round_id, performance_order, is_active) VALUES
-  ('Echo Forge',            1, 1, 0), -- Elimination
-  ('Neon Pulse',            1, 2, 0),
-  ('Prismatic Tide',        1, 3, 0),
-  ('Solaris Drift',         2, 1, 0), -- Grand Finals
-  ('Crimson Horizon',       2, 2, 0);
+  -- Elimination round
+  ('Echo Forge',      1, 1, 0),
+  ('Neon Pulse',      1, 2, 0),
+  ('Prismatic Tide',  1, 3, 0),
+  ('Lyrical Nova',    1, 4, 0),
+  ('Crimson Horizon', 1, 5, 0),
+  ('Velvet Storm',    1, 6, 0),
+  ('Golden Reverb',   1, 7, 0),
+  ('Static Pulse',    1, 8, 0),
+  ('Emberline',       1, 9, 0),
+  ('Pulse Theory',    1, 10, 0),
+  -- Grand finals
+  ('Solaris Drift',   2, 1, 0),
+  ('Aurora Bloom',    2, 2, 0),
+  ('Midnight Riff',   2, 3, 0),
+  ('Silver Echo',     2, 4, 0),
+  ('Harbor Lights',   2, 5, 0);
 
 -- Sample scores (finalized = 1)
 -- Elimination criteria IDs: 1 Musicality (50), 2 Originality (30), 3 Stage Presence (20)
@@ -52,19 +82,63 @@ INSERT INTO bands (name, round_id, performance_order, is_active) VALUES
 
 -- Judge 1 scores
 INSERT INTO scores (judge_id, band_id, criteria_id, score, is_finalized) VALUES
-  (@judge1_id, 1, 1, 42, 1), (@judge1_id, 1, 2, 25, 1), (@judge1_id, 1, 3, 17, 1),   -- Echo Forge (total: 84)
-  (@judge1_id, 2, 1, 38, 1), (@judge1_id, 2, 2, 22, 1), (@judge1_id, 2, 3, 16, 1),   -- Neon Pulse (total: 76)
-  (@judge1_id, 3, 1, 40, 1), (@judge1_id, 3, 2, 21, 1), (@judge1_id, 3, 3, 18, 1),   -- Prismatic Tide (total: 79)
-  (@judge1_id, 4, 4, 27, 1), (@judge1_id, 4, 5, 22, 1), (@judge1_id, 4, 6, 18, 1), (@judge1_id, 4, 7, 9, 1), (@judge1_id, 4, 8, 13, 1), -- Solaris Drift (total: 89)
-  (@judge1_id, 5, 4, 24, 1), (@judge1_id, 5, 5, 20, 1), (@judge1_id, 5, 6, 16, 1), (@judge1_id, 5, 7, 8, 1), (@judge1_id, 5, 8, 12, 1); -- Crimson Horizon (total: 80)
+  -- Elimination (criteria 1-3)
+  (@judge1_id, 1, 1, 45, 1), (@judge1_id, 1, 2, 26, 1), (@judge1_id, 1, 3, 18, 1),   -- Echo Forge
+  (@judge1_id, 2, 1, 42, 1), (@judge1_id, 2, 2, 22, 1), (@judge1_id, 2, 3, 17, 1),   -- Neon Pulse
+  (@judge1_id, 3, 1, 42, 1), (@judge1_id, 3, 2, 22, 1), (@judge1_id, 3, 3, 17, 1),   -- Prismatic Tide (tie with Neon)
+  (@judge1_id, 4, 1, 50, 1), (@judge1_id, 4, 2, 30, 1), (@judge1_id, 4, 3, 20, 1),   -- Lyrical Nova perfect
+  (@judge1_id, 5, 1, 34, 1), (@judge1_id, 5, 2, 20, 1), (@judge1_id, 5, 3, 15, 1),   -- Crimson Horizon
+  (@judge1_id, 6, 1, 39, 1), (@judge1_id, 6, 2, 21, 1), (@judge1_id, 6, 3, 16, 1),   -- Velvet Storm
+  (@judge1_id, 7, 1, 36, 1), (@judge1_id, 7, 2, 23, 1), (@judge1_id, 7, 3, 14, 1),   -- Golden Reverb
+  (@judge1_id, 8, 1, 35, 1), (@judge1_id, 8, 2, 20, 1), (@judge1_id, 8, 3, 15, 1),   -- Static Pulse tie set
+  (@judge1_id, 9, 1, 35, 1), (@judge1_id, 9, 2, 20, 1), (@judge1_id, 9, 3, 15, 1),   -- Emberline tie set
+  (@judge1_id, 10, 1, 35, 1), (@judge1_id, 10, 2, 20, 1), (@judge1_id, 10, 3, 15, 1), -- Pulse Theory tie set
+  -- Grand Finals (criteria 4-8)
+  (@judge1_id, 11, 4, 28, 1), (@judge1_id, 11, 5, 23, 1), (@judge1_id, 11, 6, 18, 1), (@judge1_id, 11, 7, 9, 1), (@judge1_id, 11, 8, 13, 1), -- Solaris Drift
+  (@judge1_id, 12, 4, 29, 1), (@judge1_id, 12, 5, 22, 1), (@judge1_id, 12, 6, 19, 1), (@judge1_id, 12, 7, 9, 1), (@judge1_id, 12, 8, 14, 1), -- Aurora Bloom
+  (@judge1_id, 13, 4, 26, 1), (@judge1_id, 13, 5, 20, 1), (@judge1_id, 13, 6, 16, 1), (@judge1_id, 13, 7, 8, 1), (@judge1_id, 13, 8, 12, 1), -- Midnight Riff
+  (@judge1_id, 14, 4, 27, 1), (@judge1_id, 14, 5, 22, 1), (@judge1_id, 14, 6, 17, 1), (@judge1_id, 14, 7, 9, 1), (@judge1_id, 14, 8, 13, 1), -- Silver Echo
+  (@judge1_id, 15, 4, 24, 1), (@judge1_id, 15, 5, 19, 1), (@judge1_id, 15, 6, 15, 1), (@judge1_id, 15, 7, 7, 1), (@judge1_id, 15, 8, 11, 1); -- Harbor Lights
 
 -- Judge 2 scores
 INSERT INTO scores (judge_id, band_id, criteria_id, score, is_finalized) VALUES
-  (@judge2_id, 1, 1, 44, 1), (@judge2_id, 1, 2, 23, 1), (@judge2_id, 1, 3, 18, 1),   -- Echo Forge (total: 85)
-  (@judge2_id, 2, 1, 40, 1), (@judge2_id, 2, 2, 20, 1), (@judge2_id, 2, 3, 15, 1),   -- Neon Pulse (total: 75)
-  (@judge2_id, 3, 1, 39, 1), (@judge2_id, 3, 2, 22, 1), (@judge2_id, 3, 3, 17, 1),   -- Prismatic Tide (total: 78)
-  (@judge2_id, 4, 4, 28, 1), (@judge2_id, 4, 5, 23, 1), (@judge2_id, 4, 6, 17, 1), (@judge2_id, 4, 7, 8, 1), (@judge2_id, 4, 8, 14, 1), -- Solaris Drift (total: 90)
-  (@judge2_id, 5, 4, 25, 1), (@judge2_id, 5, 5, 21, 1), (@judge2_id, 5, 6, 15, 1), (@judge2_id, 5, 7, 7, 1), (@judge2_id, 5, 8, 11, 1); -- Crimson Horizon (total: 79)
+  -- Elimination
+  (@judge2_id, 1, 1, 46, 1), (@judge2_id, 1, 2, 25, 1), (@judge2_id, 1, 3, 18, 1),   -- Echo Forge
+  (@judge2_id, 2, 1, 43, 1), (@judge2_id, 2, 2, 24, 1), (@judge2_id, 2, 3, 18, 1),   -- Neon Pulse
+  (@judge2_id, 3, 1, 41, 1), (@judge2_id, 3, 2, 25, 1), (@judge2_id, 3, 3, 19, 1),   -- Prismatic Tide
+  (@judge2_id, 4, 1, 49, 1), (@judge2_id, 4, 2, 29, 1), (@judge2_id, 4, 3, 20, 1),   -- Lyrical Nova
+  (@judge2_id, 5, 1, 36, 1), (@judge2_id, 5, 2, 19, 1), (@judge2_id, 5, 3, 16, 1),   -- Crimson Horizon
+  (@judge2_id, 6, 1, 38, 1), (@judge2_id, 6, 2, 22, 1), (@judge2_id, 6, 3, 16, 1),   -- Velvet Storm
+  (@judge2_id, 7, 1, 35, 1), (@judge2_id, 7, 2, 24, 1), (@judge2_id, 7, 3, 14, 1),   -- Golden Reverb
+  (@judge2_id, 8, 1, 34, 1), (@judge2_id, 8, 2, 21, 1), (@judge2_id, 8, 3, 15, 1),   -- Static Pulse tie set
+  (@judge2_id, 9, 1, 34, 1), (@judge2_id, 9, 2, 21, 1), (@judge2_id, 9, 3, 15, 1),   -- Emberline tie set
+  (@judge2_id, 10, 1, 34, 1), (@judge2_id, 10, 2, 21, 1), (@judge2_id, 10, 3, 15, 1), -- Pulse Theory tie set
+  -- Grand Finals
+  (@judge2_id, 11, 4, 29, 1), (@judge2_id, 11, 5, 24, 1), (@judge2_id, 11, 6, 19, 1), (@judge2_id, 11, 7, 9, 1), (@judge2_id, 11, 8, 14, 1), -- Solaris Drift
+  (@judge2_id, 12, 4, 28, 1), (@judge2_id, 12, 5, 24, 1), (@judge2_id, 12, 6, 18, 1), (@judge2_id, 12, 7, 9, 1), (@judge2_id, 12, 8, 13, 1), -- Aurora Bloom
+  (@judge2_id, 13, 4, 25, 1), (@judge2_id, 13, 5, 19, 1), (@judge2_id, 13, 6, 17, 1), (@judge2_id, 13, 7, 8, 1), (@judge2_id, 13, 8, 11, 1), -- Midnight Riff
+  (@judge2_id, 14, 4, 27, 1), (@judge2_id, 14, 5, 23, 1), (@judge2_id, 14, 6, 17, 1), (@judge2_id, 14, 7, 9, 1), (@judge2_id, 14, 8, 14, 1), -- Silver Echo
+  (@judge2_id, 15, 4, 23, 1), (@judge2_id, 15, 5, 19, 1), (@judge2_id, 15, 6, 15, 1), (@judge2_id, 15, 7, 7, 1), (@judge2_id, 15, 8, 11, 1); -- Harbor Lights
+
+-- Judge 3 scores
+INSERT INTO scores (judge_id, band_id, criteria_id, score, is_finalized) VALUES
+  -- Elimination
+  (@judge3_id, 1, 1, 47, 1), (@judge3_id, 1, 2, 27, 1), (@judge3_id, 1, 3, 19, 1),   -- Echo Forge
+  (@judge3_id, 2, 1, 44, 1), (@judge3_id, 2, 2, 23, 1), (@judge3_id, 2, 3, 18, 1),   -- Neon Pulse
+  (@judge3_id, 3, 1, 44, 1), (@judge3_id, 3, 2, 23, 1), (@judge3_id, 3, 3, 18, 1),   -- Prismatic Tide
+  (@judge3_id, 4, 1, 50, 1), (@judge3_id, 4, 2, 30, 1), (@judge3_id, 4, 3, 20, 1),   -- Lyrical Nova perfect repeat
+  (@judge3_id, 5, 1, 35, 1), (@judge3_id, 5, 2, 18, 1), (@judge3_id, 5, 3, 14, 1),   -- Crimson Horizon
+  (@judge3_id, 6, 1, 40, 1), (@judge3_id, 6, 2, 21, 1), (@judge3_id, 6, 3, 15, 1),   -- Velvet Storm
+  (@judge3_id, 7, 1, 36, 1), (@judge3_id, 7, 2, 23, 1), (@judge3_id, 7, 3, 14, 1),   -- Golden Reverb
+  (@judge3_id, 8, 1, 33, 1), (@judge3_id, 8, 2, 22, 1), (@judge3_id, 8, 3, 15, 1),   -- Static Pulse tie set
+  (@judge3_id, 9, 1, 33, 1), (@judge3_id, 9, 2, 22, 1), (@judge3_id, 9, 3, 15, 1),   -- Emberline tie set
+  (@judge3_id, 10, 1, 33, 1), (@judge3_id, 10, 2, 22, 1), (@judge3_id, 10, 3, 15, 1), -- Pulse Theory tie set
+  -- Grand Finals
+  (@judge3_id, 11, 4, 30, 1), (@judge3_id, 11, 5, 24, 1), (@judge3_id, 11, 6, 19, 1), (@judge3_id, 11, 7, 10, 1), (@judge3_id, 11, 8, 15, 1), -- Solaris Drift
+  (@judge3_id, 12, 4, 29, 1), (@judge3_id, 12, 5, 25, 1), (@judge3_id, 12, 6, 19, 1), (@judge3_id, 12, 7, 9, 1), (@judge3_id, 12, 8, 14, 1), -- Aurora Bloom
+  (@judge3_id, 13, 4, 26, 1), (@judge3_id, 13, 5, 18, 1), (@judge3_id, 13, 6, 16, 1), (@judge3_id, 13, 7, 8, 1), (@judge3_id, 13, 8, 10, 1), -- Midnight Riff
+  (@judge3_id, 14, 4, 27, 1), (@judge3_id, 14, 5, 23, 1), (@judge3_id, 14, 6, 17, 1), (@judge3_id, 14, 7, 9, 1), (@judge3_id, 14, 8, 13, 1), -- Silver Echo
+  (@judge3_id, 15, 4, 24, 1), (@judge3_id, 15, 5, 18, 1), (@judge3_id, 15, 6, 15, 1), (@judge3_id, 15, 7, 7, 1), (@judge3_id, 15, 8, 11, 1); -- Harbor Lights
 
 -- Optional: set an active band for live judge polling (comment out if not needed)
 -- UPDATE bands SET is_active = 1 WHERE name = 'Echo Forge';
@@ -78,6 +152,15 @@ COMMIT;
 -- Solaris Drift (Judge1): 27+22+18+9+13 = 89  (Judge2): 28+23+17+8+14 = 90  Avg: 89.50
 -- Crimson Horizon (Judge1): 24+20+16+8+12 = 80  (Judge2): 25+21+15+7+11 = 79  Avg: 79.50
 
--- Expected rankings
--- Elimination: Echo Forge 84.50, Prismatic Tide 78.50, Neon Pulse 75.50 (Echo Forge leads)
--- Grand Finals: Solaris Drift 89.50, Crimson Horizon 79.50 (Solaris wins)
+-- Expected rankings / quick reference
+-- Elimination (avg of 3 judges):
+--   1) Lyrical Nova      — 99.33 (perfect sweep stress test)
+--   2) Echo Forge        — 90.33
+--   3) Neon Pulse        — 83.67  \_ tie check (identical to Prismatic Tide)
+--   3) Prismatic Tide    — 83.67  /
+--   5) Crimson Horizon   — 69.00
+-- Grand Finals:
+--   1) Solaris Drift     — 94.67 (wins by single point)
+--   2) Aurora Bloom      — 93.67
+--   3) Midnight Riff     — 80.00
+-- Use these figures to validate ranking order, tie badges, and decimal precision.

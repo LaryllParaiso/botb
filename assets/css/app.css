@@ -176,9 +176,90 @@
     }
 }
 
-/* Judge sidebar active link hover */
-#judgeSidebarDesktop .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+/* Judge top navbar */
+.judge-topbar {
+    padding: 0.75rem 0;
+}
+
+.judge-topbar .navbar-brand {
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+}
+
+/* Golden submit button */
+.btn-accent {
+    background-color: var(--botb-accent);
+    border-color: var(--botb-accent);
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.btn-accent:hover,
+.btn-accent:focus {
+    background-color: #e6c200;
+    border-color: #e6c200;
+    color: #1a1a1a;
+}
+
+.btn-accent:disabled {
+    background-color: #e6d580;
+    border-color: #e6d580;
+    color: #999;
+}
+
+/* Accent text color (golden) */
+.text-accent {
+    color: var(--botb-accent);
+}
+
+/* Inline weighted total row */
+.score-total-inline {
+    font-size: 0.95rem;
+}
+
+.score-total-inline .text-accent {
+    font-size: 1.1rem;
+}
+
+/* Score accordion items */
+.score-accordion-item {
+    border: 1px solid #e9ecef !important;
+}
+
+.score-accordion-btn {
+    background-color: var(--botb-primary) !important;
+    color: #fff !important;
+    font-size: 0.9rem;
+}
+
+.score-accordion-btn::after {
+    filter: invert(1);
+}
+
+.score-accordion-btn.collapsed {
+    background-color: #fff !important;
+    color: #333 !important;
+}
+
+.score-accordion-btn.collapsed::after {
+    filter: none;
+}
+
+.score-detail-table thead {
+    background-color: #f0f4f8;
+}
+
+.score-detail-table thead th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    border-bottom: none;
+}
+
+.score-detail-table tbody td {
+    font-size: 0.85rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 /* Loading overlay */

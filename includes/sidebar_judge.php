@@ -1,10 +1,12 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 ?>
-<!-- Offcanvas sidebar for mobile -->
+<!-- Mobile offcanvas sidebar -->
 <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="judgeSidebarMobile" aria-labelledby="judgeSidebarMobileLabel">
     <div class="offcanvas-header bg-primary text-white">
-        <h5 class="offcanvas-title" id="judgeSidebarMobileLabel"><i class="bi bi-music-note-beamed"></i> BotB Judge</h5>
+        <h5 class="offcanvas-title fw-bold" id="judgeSidebarMobileLabel">
+            <i class="bi bi-music-note-beamed"></i> BotB Judge
+        </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-0">
@@ -23,21 +25,30 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     </div>
 </div>
 
-<!-- Main content area (no desktop sidebar) -->
-<div>
-    <!-- Mobile top bar -->
-    <nav class="navbar navbar-dark bg-primary d-lg-none">
-        <div class="container-fluid">
-            <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#judgeSidebarMobile">
-                <i class="bi bi-list"></i>
-            </button>
-            <span class="navbar-brand mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-music-note-beamed"></i>
-                <span>Judge </span>
-                <span class="badge bg-dark"><i class="bi bi-person-circle"></i> <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Judge'); ?></span>
-            </span>
-            <span></span>
-        </div>
-    </nav>
+<!-- Desktop: top navbar with name + logout -->
+<nav class="navbar navbar-dark bg-primary judge-topbar d-none d-lg-flex">
+    <div class="container-fluid px-3 px-md-4">
+        <span class="navbar-brand mb-0 fw-bold fs-5">
+            <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Judge'); ?>
+        </span>
+        <a href="/BOB_SYSTEM/logout.php" class="btn btn-link text-danger text-decoration-none fw-semibold p-0">
+            <i class="bi bi-box-arrow-right"></i> Log Out
+        </a>
+    </div>
+</nav>
 
+<!-- Mobile: top bar with hamburger + judge name -->
+<nav class="navbar navbar-dark bg-primary d-lg-none judge-topbar">
+    <div class="container-fluid px-3">
+        <button class="btn btn-outline-light border-0 p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#judgeSidebarMobile">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="navbar-brand mb-0 fw-bold">
+            <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Judge'); ?>
+        </span>
+        <span style="width:32px;"></span>
+    </div>
+</nav>
+
+<div>
     <div id="judgeMainContent">

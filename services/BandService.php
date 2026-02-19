@@ -89,6 +89,15 @@ class BandService implements CRUDInterface
     }
 
     /**
+     * Deactivate all bands — no band is currently performing
+     */
+    public function deactivateAll(): bool
+    {
+        $stmt = $this->db->exec("UPDATE bands SET is_active = 0");
+        return $stmt !== false;
+    }
+
+    /**
      * Get the currently active band with its round info
      */
     public function getActiveBand(): ?array
