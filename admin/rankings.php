@@ -40,6 +40,9 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
                     <button class="btn btn-outline-success" onclick="downloadExcel()">
                         <i class="bi bi-file-earmark-excel"></i> Excel
                     </button>
+                    <button class="btn btn-outline-danger" onclick="downloadPDF()">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
                     <button class="btn btn-outline-primary" onclick="window.print()">
                         <i class="bi bi-printer"></i> Print
                     </button>
@@ -110,7 +113,7 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
             </div>
 
             <div class="text-muted small mt-3 no-print">
-                <i class="bi bi-info-circle"></i> Rankings update when scores are submitted. Click <strong>Print</strong> for a clean printable view or <strong>Excel</strong> to download.
+                <i class="bi bi-info-circle"></i> Rankings update when scores are submitted. Click <strong>Print</strong> for a clean printable view, <strong>Excel</strong> to download a spreadsheet, or <strong>PDF</strong> to export a formatted PDF document.
             </div>
         </div>
 

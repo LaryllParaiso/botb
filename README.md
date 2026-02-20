@@ -73,7 +73,17 @@ To populate sample bands, judges, and scores for testing:
 mysql -u root botb_tabulator < C:\xampp\htdocs\BOB_SYSTEM\test_data.sql
 ```
 
-### 5. Configure Database Connection
+### 5. Create Logo Uploads Directory
+
+The system stores uploaded logos in `assets/uploads/logos/`. Create this folder and ensure Apache can write to it:
+
+```bash
+mkdir C:\xampp\htdocs\BOB_SYSTEM\assets\uploads\logos
+```
+
+Or manually create the folder structure: `assets/uploads/logos/` inside the project directory.
+
+### 6. Configure Database Connection
 
 Edit `config/db.php` if your MySQL credentials differ from the defaults:
 
@@ -135,9 +145,10 @@ BOB_SYSTEM/
 │   ├── css/
 │   │   ├── app.css         # Main application styles
 │   │   └── print.css       # Print-specific styles
-│   └── js/
-│       ├── admin.js        # Admin dashboard logic
-│       └── judge.js        # Judge scoring logic
+│   ├── js/
+│   │   ├── admin.js        # Admin dashboard logic
+│   │   └── judge.js        # Judge scoring logic
+│   └── uploads/            # Logo uploads directory (must be writable)
 ├── config/
 │   └── db.php              # Database configuration (PDO singleton)
 ├── controllers/

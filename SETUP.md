@@ -71,7 +71,21 @@ C:\xampp\mysql\bin\mysql.exe -u root < C:\xampp\htdocs\BOB_SYSTEM\database.sql
 
 ---
 
-## Step 5: (Optional) Load Test Data
+## Step 5: Create Logo Uploads Directory
+
+The system stores uploaded logos in `assets/uploads/logos/`. You must create this folder manually:
+
+```bash
+mkdir C:\xampp\htdocs\BOB_SYSTEM\assets\uploads\logos
+```
+
+Or manually create the folder structure: `assets/uploads/logos/` inside the project directory.
+
+> **Important:** Apache needs write permissions to this folder. On Windows with XAMPP, this is usually automatic. If logo uploads fail, check the folder permissions.
+
+---
+
+## Step 6: (Optional) Load Test Data
 
 If you want to test with sample bands, judges, and scores:
 
@@ -89,7 +103,7 @@ C:\xampp\mysql\bin\mysql.exe -u root botb_tabulator < C:\xampp\htdocs\BOB_SYSTEM
 
 ---
 
-## Step 6: Verify Database Connection
+## Step 7: Verify Database Connection
 
 The default database config uses:
 - **Host:** `127.0.0.1`
@@ -106,7 +120,7 @@ private const DB_PASS = '';  // ← Change this if you set a MySQL password
 
 ---
 
-## Step 7: Install WebSocket Dependencies
+## Step 8: Install WebSocket Dependencies
 
 Open a terminal and run:
 
@@ -119,7 +133,7 @@ This installs the `ws` (WebSocket) library.
 
 ---
 
-## Step 8: Start the WebSocket Server
+## Step 9: Start the WebSocket Server
 
 In the same terminal:
 
@@ -137,7 +151,7 @@ You should see:
 
 ---
 
-## Step 9: Open the Application
+## Step 10: Open the Application
 
 Open your browser and go to:
 
@@ -145,7 +159,7 @@ Open your browser and go to:
 
 ---
 
-## Step 10: Log In
+## Step 11: Log In
 
 ### Admin Login
 - **Email:** `admin@botb.com`

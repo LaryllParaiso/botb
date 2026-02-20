@@ -957,6 +957,308 @@ async function downloadExcel() {
 }
 
 // ============================================
+// PDF EXPORT
+// ============================================
+
+/**
+ * Download rankings as a PDF matching the printable view layout
+ */
+async function downloadPDF() {
+    if (!currentRankingsData || !currentRankingsData.rankings) {
+        Swal.fire({ icon: 'info', title: 'No Data', text: 'Load rankings first before exporting.', confirmButtonColor: '#003366' });
+        return;
+    }
+
+    const { value: orientation } = await Swal.fire({
+        title: 'PDF Page Orientation',
+        input: 'radio',
+        inputOptions: { landscape: 'Landscape', portrait: 'Portrait' },
+        inputValue: 'landscape',
+        showCancelButton: true,
+        confirmButtonText: 'Download',
+        confirmButtonColor: '#003366',
+        cancelButtonColor: '#6c757d'
+    });
+
+    if (!orientation) return;
+
+    // Show loading feedback
+    Swal.fire({
+        title: 'Generating PDF…',
+        text: 'Please wait while the document is prepared.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    const data = currentRankingsData;
+    const settings = data.settings || {};
+    const topN = parseInt(document.getElementById('topNInput')?.value) || 8;
+    const eventTitle = settings.event_title || 'Battle of the Bands — NEUST 2026';
+    const eventSubtitle = settings.event_subtitle || '118th Founding Anniversary / 28th Charter Day';
+    const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const roundLabel = currentRankingsRoundId == 1 ? 'Elimination' : 'Grand Finals';
+
+    // Resolve logo URLs to absolute URLs
+    const logoLeftSrc = (settings.logo_left || '/BOB_SYSTEM/assets/image 23.png');
+    const logoRightSrc = (settings.logo_right || '/BOB_SYSTEM/assets/Mask group.png');
+    const watermarkSrc = (settings.logo_watermark || '/BOB_SYSTEM/assets/Mask group (1).png');
+
+    // Page dimensions (mm → px at 96 dpi for container sizing)
+    const isLandscape = orientation === 'landscape';
+    const pageW = isLandscape ? 330.2 : 215.9;
+    const pageH = isLandscape ? 215.9 : 330.2;
+    const mmToPx = 3.7795275591;   // 1mm = 3.7795px at 96dpi
+    const containerW = Math.floor(pageW * mmToPx);
+
+    // Determine top-N band IDs (tie-aware)
+    const topNBandIds = new Set();
+    let accumulated = 0, cutoffReached = false, lastIncludedRank = null;
+    data.rankings.forEach(band => {
+        if (cutoffReached && band.rank !== lastIncludedRank) return;
+        topNBandIds.add(band.band_id);
+        accumulated++;
+        lastIncludedRank = band.rank;
+        if (accumulated >= topN) cutoffReached = true;
+    });
+
+    // ---- Build the off-screen container ----
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: ${containerW}px;
+        background: #fff;
+        font-family: Arial, sans-serif;
+        font-size: 11pt;
+        color: #000;
+        padding: 32px 32px 24px 32px;
+        box-sizing: border-box;
+        position: relative;
+    `;
+
+    // --- Watermark (behind everything) ---
+    const wmContainer = document.createElement('div');
+    wmContainer.style.cssText = `
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    `;
+    const wmImg = document.createElement('img');
+    wmImg.src = window.location.origin + watermarkSrc;
+    wmImg.crossOrigin = 'anonymous';
+    wmImg.style.cssText = `width: 520px; opacity: 0.10; display: block;`;
+    wmContainer.appendChild(wmImg);
+    wrap.appendChild(wmContainer);
+
+    // Content wrapper (above watermark)
+    const content = document.createElement('div');
+    content.style.cssText = `position: relative; z-index: 1;`;
+    wrap.appendChild(content);
+
+    // --- Header: logos + title block ---
+    const header = document.createElement('div');
+    header.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 20px;
+        text-align: center;
+    `;
+
+    const mkLogo = (src) => {
+        const img = document.createElement('img');
+        img.src = window.location.origin + src;
+        img.crossOrigin = 'anonymous';
+        img.style.cssText = `width: 70px; height: 70px; object-fit: contain; flex-shrink: 0;`;
+        return img;
+    };
+
+    const titleBlock = document.createElement('div');
+    titleBlock.style.cssText = `text-align: center; flex: 1;`;
+    titleBlock.innerHTML = `
+        <div style="font-size:16pt; font-weight:700; margin:0 0 2px 0;">${escapeHtml(eventTitle)}</div>
+        <div style="font-size:11pt; font-weight:400; margin:0 0 2px 0;">${escapeHtml(eventSubtitle)}</div>
+        <div style="font-size:10pt; color:#555; margin:0;">Official Rankings &mdash; ${escapeHtml(currentDate)}</div>
+        <div style="font-size:10pt; color:#555; margin:4px 0 0 0;">Round: <strong>${escapeHtml(roundLabel)}</strong></div>
+    `;
+
+    header.appendChild(mkLogo(logoLeftSrc));
+    header.appendChild(titleBlock);
+    header.appendChild(mkLogo(logoRightSrc));
+    content.appendChild(header);
+
+    // --- Rankings Table ---
+    const table = document.createElement('table');
+    table.style.cssText = `
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt;
+        margin-top: 8px;
+    `;
+
+    // Build thead
+    let theadHtml = `<tr style="background:#003366; color:#fff;">
+        <th style="border:1px solid #333; padding:6px 8px; text-align:center;">Rank</th>
+        <th style="border:1px solid #333; padding:6px 8px; text-align:left;">Band Name</th>`;
+    if (data.judges && data.judges.length > 0) {
+        data.judges.forEach(j => {
+            theadHtml += `<th style="border:1px solid #333; padding:6px 8px; text-align:center;">${escapeHtml(j.name)}</th>`;
+        });
+    }
+    theadHtml += `<th style="border:1px solid #333; padding:6px 8px; text-align:center;">Average Score</th></tr>`;
+    table.innerHTML = `<thead>${theadHtml}</thead>`;
+
+    // Build tbody
+    const tbody = document.createElement('tbody');
+    data.rankings.forEach(band => {
+        const rank = band.rank || 0;
+        const isTopN = topNBandIds.has(band.band_id);
+
+        let rowBg = 'transparent';
+        let leftBorder = '1px solid #333';
+        if (rank === 1) { rowBg = '#fff8dc'; leftBorder = '4px solid #FFD700'; }
+        else if (rank === 2) { rowBg = '#f0f0f0'; leftBorder = '4px solid #C0C0C0'; }
+        else if (rank === 3) { rowBg = '#fdf5e6'; leftBorder = '4px solid #CD7F32'; }
+        if (isTopN) { leftBorder = '4px solid #003366'; }
+
+        const fontW = isTopN ? '700' : '400';
+        const cellStyle = `border:1px solid #333; padding:5px 8px; background:${rowBg}; font-weight:${fontW};`;
+        const firstCellStyle = `${cellStyle} border-left:${leftBorder};`;
+
+        let rowHtml = `
+            <td style="${firstCellStyle} text-align:center;">${rank}</td>
+            <td style="${cellStyle} text-align:left;">${isTopN ? `<strong>${escapeHtml(band.band_name)}</strong>` : escapeHtml(band.band_name)}</td>`;
+
+        if (data.judges && data.judges.length > 0) {
+            data.judges.forEach(j => {
+                const score = band.judge_scores[j.id];
+                const display = (score !== undefined && score !== null) ? parseFloat(score).toFixed(2) : '—';
+                rowHtml += `<td style="${cellStyle} text-align:center;">${display}</td>`;
+            });
+        }
+        rowHtml += `<td style="${cellStyle} text-align:center;"><strong>${parseFloat(band.average_score).toFixed(2)}</strong></td>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = rowHtml;
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    content.appendChild(table);
+
+    // --- Judge Names Footer ---
+    if (data.all_judges && data.all_judges.length > 0) {
+        const judgesSection = document.createElement('div');
+        judgesSection.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 8px 16px;
+            margin-top: 40px;
+        `;
+        data.all_judges.forEach(j => {
+            const jDiv = document.createElement('div');
+            jDiv.style.cssText = `flex: 1; min-width: 100px; text-align: center; font-size: 10pt;`;
+            jDiv.innerHTML = `<strong><u>${escapeHtml(j.name)}</u></strong>`;
+            judgesSection.appendChild(jDiv);
+        });
+        content.appendChild(judgesSection);
+    }
+
+    // --- Signatories Footer ---
+    let signatories = [];
+    try { signatories = JSON.parse((settings.signatories) || '[]'); } catch (e) { }
+    if (signatories.length > 0) {
+        const sigSection = document.createElement('div');
+        sigSection.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-top: 32px;
+        `;
+        const labels = ['Prepared by:', 'Confirmed by:', 'Approved by:'];
+        signatories.slice(0, 3).forEach((sig, idx) => {
+            const fs = sig.fontSize ? `${sig.fontSize}pt` : '11pt';
+            const block = document.createElement('div');
+            block.style.cssText = `flex: 1; min-width: 140px; text-align: left;`;
+            block.innerHTML = `
+                <div style="font-size:9pt; margin-bottom:4px;">${escapeHtml(labels[idx] || '')}</div>
+                <div style="font-size:${fs}; font-weight:700; text-decoration:underline;">${escapeHtml(sig.name || '')}</div>
+                <div style="font-size:9pt;">${escapeHtml(sig.title || '')}</div>
+            `;
+            sigSection.appendChild(block);
+        });
+        content.appendChild(sigSection);
+    }
+
+    // Append off-screen wrapper to DOM so html2canvas can render it
+    document.body.appendChild(wrap);
+
+    try {
+        // Wait for images to load
+        const imgs = wrap.querySelectorAll('img');
+        await Promise.all(Array.from(imgs).map(img =>
+            img.complete ? Promise.resolve() : new Promise(res => { img.onload = res; img.onerror = res; })
+        ));
+
+        const canvas = await html2canvas(wrap, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: orientation,
+            unit: 'mm',
+            format: [215.9, 330.2]
+        });
+
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+        // Scale image to fill full page width, compute proportional height
+        const imgWidth = pdfW;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Multi-page pagination: slide the image upward by one page height each time
+        let heightLeft = imgHeight;
+        let pageYOffset = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, pageYOffset, imgWidth, imgHeight);
+        heightLeft -= pdfH;
+
+        while (heightLeft > 0) {
+            pageYOffset -= pdfH;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, pageYOffset, imgWidth, imgHeight);
+            heightLeft -= pdfH;
+        }
+
+
+        const filename = `Rankings_${roundLabel.replace(/\s+/g, '_')}_${currentDate.replace(/,?\s+/g, '_')}.pdf`;
+        pdf.save(filename);
+
+        Swal.close();
+    } catch (err) {
+        console.error('PDF generation error:', err);
+        Swal.fire({ icon: 'error', title: 'PDF Error', text: 'Failed to generate PDF. Please try again.', confirmButtonColor: '#003366' });
+    } finally {
+        document.body.removeChild(wrap);
+    }
+}
+
+
+// ============================================
 // SCORE MANAGEMENT
 // ============================================
 
